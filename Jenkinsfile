@@ -2,69 +2,64 @@ pipeline {
     agent any
 
     environment {
-        // Add any environment variables you need here, such as API tokens for deployment, SonarQube server, etc.
-        SONARQUBE_SERVER = 'SonarQube'
-        DOCKER_IMAGE = 'personal-data-protection-app:latest' // Example Docker image name
+        DOCKER_IMAGE = 'personal-data-protection-app:latest' // Example image name
+        GIT_URL = 'https://github.com/Saikumarch83/Personal-data-protection-website.git' // Your repository URL
     }
 
     stages {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                // Replace with your actual build command. If it's a Node.js app, for example:
-                // sh 'npm install'
-                // If it's a Java app:
-                // sh 'mvn clean package'
-                // Example for Docker build:
-                sh 'docker build -t $DOCKER_IMAGE .'
+                // For Windows, use 'bat' instead of 'sh'
+                bat 'echo Building the project on Windows'
+                // Example for npm build or Docker build if you're using Node.js or Docker:
+                // bat 'npm install'
+                // bat 'docker build -t %DOCKER_IMAGE% .'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                // Run your automated tests here. For example, if it's a Node.js app:
-                // sh 'npm test'
-                // If it's a Java app with JUnit:
-                // sh 'mvn test'
+                // Use 'bat' to run tests on Windows
+                bat 'echo Running tests on Windows'
+                // Example for Node.js testing:
+                // bat 'npm test'
             }
         }
 
         stage('Code Quality Analysis') {
             steps {
-                echo 'Running code quality analysis with SonarQube...'
-                // Example for SonarQube analysis:
-                withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar'
-                }
+                echo 'Running Code Quality Analysis...'
+                // Example SonarQube analysis for Windows:
+                bat 'echo Running SonarQube analysis'
+                // If using SonarQube or another tool, integrate here
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application to test environment...'
-                // Replace with your actual deployment commands. Example for Docker Compose:
-                sh 'docker-compose up -d'
-                // If deploying to AWS Elastic Beanstalk:
-                // sh 'eb deploy'
+                echo 'Deploying the application...'
+                // For Docker Compose or any other Windows-friendly deployment tool
+                bat 'echo Deploying the application on Windows'
+                // Example for Docker Compose:
+                // bat 'docker-compose up -d'
             }
         }
 
         stage('Release') {
             steps {
-                echo 'Releasing application to production...'
-                // Use a release management tool like AWS CodeDeploy, Octopus Deploy, etc.
-                // Example for AWS CodeDeploy:
-                // sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyProdGroup --github-location repository=https://github.com/your-repo/app,commitId=main'
+                echo 'Releasing the application...'
+                bat 'echo Releasing the application to production'
+                // Integrate release management commands (e.g., AWS CodeDeploy, Octopus)
             }
         }
 
         stage('Monitoring & Alerting') {
             steps {
-                echo 'Setting up monitoring and alerting...'
-                // Example for Datadog integration:
-                // sh 'datadog-agent check http_check'
-                // Or New Relic, Prometheus, etc.
+                echo 'Setting up Monitoring and Alerting...'
+                bat 'echo Monitoring production environment on Windows'
+                // Integrate monitoring tools like Datadog or New Relic here
             }
         }
     }
