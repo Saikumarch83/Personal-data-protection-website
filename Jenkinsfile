@@ -2,64 +2,70 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'personal-data-protection-app:latest' // Example image name
-        GIT_URL = 'https://github.com/Saikumarch83/Personal-data-protection-website.git' // Your repository URL
+        DOCKER_IMAGE = "my-app"
+        STAGING_SERVER = "staging-server-address"
+        PRODUCTION_SERVER = "production-server-address"
+        SONAR_HOST_URL = "http://your-sonarqube-server"
+        SONAR_PROJECT_KEY = "your-project-key"
+        SONAR_TOKEN = credentials('sonarqube-token')
     }
 
     stages {
         stage('Build') {
             steps {
-                echo 'Building the project...'
-                // For Windows, use 'bat' instead of 'sh'
-                bat 'echo Building the project on Windows'
-                // Example for npm build or Docker build if you're using Node.js or Docker:
-                // bat 'npm install'
-                // bat 'docker build -t %DOCKER_IMAGE% .'
+                echo 'Building the application...'
+                sh 'npm install'
+                sh 'npm run build'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                // Use 'bat' to run tests on Windows
-                bat 'echo Running tests on Windows'
-                // Example for Node.js testing:
-                // bat 'npm test'
+                echo 'Running automated tests...'
+                sh 'npm test'
             }
         }
 
         stage('Code Quality Analysis') {
             steps {
-                echo 'Running Code Quality Analysis...'
-                // Example SonarQube analysis for Windows:
-                bat 'echo Running SonarQube analysis'
-                // If using SonarQube or another tool, integrate here
+                echo 'Running SonarQube analysis...'
+                sh """
+                sonar-scanner \
+                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                  -Dsonar.sources=. \
+                  -Dsonar.host.url=${SONAR_HOST_URL} \
+                  -Dsonar.login=${SONAR_TOKEN}
+                """
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Staging') {
             steps {
-                echo 'Deploying the application...'
-                // For Docker Compose or any other Windows-friendly deployment tool
-                bat 'echo Deploying the application on Windows'
-                // Example for Docker Compose:
-                // bat 'docker-compose up -d'
+                echo 'Deploying to Staging environment...'
+                sh """
+                docker build -t ${DOCKER_IMAGE} .
+                docker run -d -p 80:80 --name ${DOCKER_IMAGE}_staging ${DOCKER_IMAGE}
+                """
             }
         }
 
-        stage('Release') {
+        stage('Release to Production') {
             steps {
-                echo 'Releasing the application...'
-                bat 'echo Releasing the application to production'
-                // Integrate release management commands (e.g., AWS CodeDeploy, Octopus)
+                echo 'Releasing to Production environment...'
+                sh """
+                ssh user@${PRODUCTION_SERVER} 'docker pull ${DOCKER_IMAGE} && docker stop ${DOCKER_IMAGE}_prod && docker rm ${DOCKER_IMAGE}_prod && docker run -d -p 80:80 --name ${DOCKER_IMAGE}_prod ${DOCKER_IMAGE}'
+                """
             }
         }
 
-        stage('Monitoring & Alerting') {
+        stage('Serve HTML on Localhost') {
             steps {
-                echo 'Setting up Monitoring and Alerting...'
-                bat 'echo Monitoring production environment on Windows'
-                // Integrate monitoring tools like Datadog or New Relic here
+                echo 'Serving HTML file on localhost:8080...'
+                // Start a Python HTTP server to serve the build directory
+                sh """
+                cd build  # Navigate to the directory containing the HTML files (modify as necessary)
+                nohup python3 -m http.server 8080 &  # Run HTTP server in the background
+                """
             }
         }
     }
@@ -70,10 +76,12 @@ pipeline {
             cleanWs()
         }
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline executed successfully!'
+            // You can also add a step to display the URL to access the HTML
+            echo 'You can view the HTML report at http://localhost:8080'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline failed! Please check logs for details.'
         }
     }
 }
