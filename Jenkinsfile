@@ -1,81 +1,70 @@
 pipeline {
-    agent any  // This specifies that Jenkins can run the job on any available agent
+    agent any
 
     environment {
-        // Setting environment variables for Docker, SonarQube, and your servers
-        DOCKER_IMAGE = "my-app"  // Name of the Docker image to build and deploy
-        STAGING_SERVER = "staging-server-address"  // Replace with actual staging server address
-        PRODUCTION_SERVER = "production-server-address"  // Replace with actual production server address
-        SONAR_HOST_URL = "http://your-sonarqube-server"  // URL of your SonarQube server
-        SONAR_PROJECT_KEY = "your-project-key"  // Replace with your SonarQube project key
-        SONAR_TOKEN = credentials('sonarqube-token')  // Use Jenkins credentials for SonarQube token
+        // Add any environment variables you need here, such as API tokens for deployment, SonarQube server, etc.
+        SONARQUBE_SERVER = 'SonarQube'
+        DOCKER_IMAGE = 'personal-data-protection-app:latest' // Example Docker image name
     }
 
     stages {
-
-        // Step 1: Build Stage
         stage('Build') {
             steps {
-                echo 'Building the application...'
-                // This example assumes a Node.js project. Modify it to fit your project (e.g., Maven, Gradle)
-                sh 'npm install'  // Install dependencies
-                sh 'npm run build'  // Build the project (e.g., run your build command)
+                echo 'Building the project...'
+                // Replace with your actual build command. If it's a Node.js app, for example:
+                // sh 'npm install'
+                // If it's a Java app:
+                // sh 'mvn clean package'
+                // Example for Docker build:
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
-        // Step 2: Test Stage
         stage('Test') {
             steps {
-                echo 'Running automated tests...'
-                // Running tests. Change the command according to your testing framework (e.g., JUnit, Selenium, etc.)
-                sh 'npm test'  // For a Node.js project, modify this for your test framework
+                echo 'Running tests...'
+                // Run your automated tests here. For example, if it's a Node.js app:
+                // sh 'npm test'
+                // If it's a Java app with JUnit:
+                // sh 'mvn test'
             }
         }
 
-        // Step 3: Code Quality Analysis (SonarQube)
         stage('Code Quality Analysis') {
             steps {
-                echo 'Running code quality analysis using SonarQube...'
-                // Running SonarQube scanner to analyze the code
-                sh """
-                sonar-scanner \
-                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                  -Dsonar.sources=. \
-                  -Dsonar.host.url=${SONAR_HOST_URL} \
-                  -Dsonar.login=${SONAR_TOKEN}
-                """
+                echo 'Running code quality analysis with SonarQube...'
+                // Example for SonarQube analysis:
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar'
+                }
             }
         }
 
-        // Step 4: Deploy to Staging
-        stage('Deploy to Staging') {
+        stage('Deploy') {
             steps {
-                echo 'Deploying to staging environment...'
-                // Example Docker deployment to a staging environment
-                sh """
-                docker build -t ${DOCKER_IMAGE} .  // Build the Docker image
-                docker run -d -p 80:80 --name ${DOCKER_IMAGE}_staging ${DOCKER_IMAGE}  // Run it on port 80
-                """
+                echo 'Deploying application to test environment...'
+                // Replace with your actual deployment commands. Example for Docker Compose:
+                sh 'docker-compose up -d'
+                // If deploying to AWS Elastic Beanstalk:
+                // sh 'eb deploy'
             }
         }
 
-        // Step 5: Release to Production
-        stage('Release to Production') {
+        stage('Release') {
             steps {
-                echo 'Releasing to production environment...'
-                // SSH into the production server and deploy the application
-                sh """
-                ssh user@${PRODUCTION_SERVER} 'docker pull ${DOCKER_IMAGE} && docker stop ${DOCKER_IMAGE}_prod && docker rm ${DOCKER_IMAGE}_prod && docker run -d -p 80:80 --name ${DOCKER_IMAGE}_prod ${DOCKER_IMAGE}'
-                """
+                echo 'Releasing application to production...'
+                // Use a release management tool like AWS CodeDeploy, Octopus Deploy, etc.
+                // Example for AWS CodeDeploy:
+                // sh 'aws deploy create-deployment --application-name MyApp --deployment-group-name MyProdGroup --github-location repository=https://github.com/your-repo/app,commitId=main'
             }
         }
 
-        // Step 6: Monitoring and Alerts
-        stage('Monitoring and Alerts') {
+        stage('Monitoring & Alerting') {
             steps {
-                echo 'Setting up monitoring for production...'
-                // Set up monitoring or alerts using a tool like Datadog or New Relic.
-                // You could run monitoring setup commands or send API calls to monitoring services here.
+                echo 'Setting up monitoring and alerting...'
+                // Example for Datadog integration:
+                // sh 'datadog-agent check http_check'
+                // Or New Relic, Prometheus, etc.
             }
         }
     }
@@ -83,13 +72,13 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            cleanWs()  // Clean up the workspace after the job completes
+            cleanWs()
         }
         success {
-            echo 'Pipeline executed successfully!'
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Please check the logs for more details.'
+            echo 'Pipeline failed!'
         }
     }
 }
