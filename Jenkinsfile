@@ -2,40 +2,40 @@ pipeline {
     agent any
     
     environment {
-        // Environment variables for Docker and SonarQube
+        // Docker and SonarQube settings
         DOCKER_IMAGE = "my-app"
-        STAGING_SERVER = "staging-server-address"  // Replace with your staging server address
+        STAGING_SERVER = "staging-server-address"  // Replace with your actual staging server address
         PRODUCTION_SERVER = "production-server-address"  // Replace with your production server address
-        SONAR_HOST_URL = "http://your-sonarqube-server"  // SonarQube server URL
-        SONAR_PROJECT_KEY = "personal-data-protection-website"
-        SONAR_TOKEN = credentials('sonarqube-token')  // SonarQube credentials (configure this in Jenkins)
+        SONAR_HOST_URL = "http://your-sonarqube-server"  // SonarQube URL
+        SONAR_PROJECT_KEY = "your-project-key"  // Your SonarQube project key
+        SONAR_TOKEN = credentials('sonarqube-token')  // Jenkins credentials for SonarQube token
     }
 
     stages {
         
-        // Build Stage: Install dependencies and build the project
+        // Build Stage: Compile and create the artifact (Docker image, JAR file, etc.)
         stage('Build') {
             steps {
                 echo 'Building the application...'
-                // Example for Node.js project; modify according to your project's needs
+                // Example for a Node.js project (change to your build system, e.g., Maven for Java projects)
                 sh 'npm install'
                 sh 'npm run build'
             }
         }
         
-        // Test Stage: Run automated tests
+        // Test Stage: Run automated tests to validate the application
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                // Example: Run unit tests with a Node.js testing framework (like Jest or Mocha)
+                echo 'Running automated tests...'
+                // Example for running Node.js tests (modify this for your framework, such as JUnit, Selenium, etc.)
                 sh 'npm test'
             }
         }
-        
-        // Code Quality Analysis Stage: Analyze code with SonarQube
+
+        // Code Quality Analysis Stage: Run SonarQube to check code quality
         stage('Code Quality Analysis') {
             steps {
-                echo 'Running SonarQube analysis...'
+                echo 'Running code quality analysis with SonarQube...'
                 sh """
                 sonar-scanner \
                   -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -46,35 +46,35 @@ pipeline {
             }
         }
         
-        // Deploy Stage: Deploy to a staging environment using Docker
+        // Deploy to Staging Stage: Deploy the application to a test/staging environment
         stage('Deploy to Staging') {
             steps {
-                echo 'Deploying to Staging environment...'
-                // Building a Docker image and running it as a container in the staging environment
+                echo 'Deploying application to Staging environment...'
+                // Example of deploying a Docker image to a staging environment
                 sh """
                 docker build -t ${DOCKER_IMAGE} .
                 docker run -d -p 80:80 --name ${DOCKER_IMAGE}_staging ${DOCKER_IMAGE}
                 """
             }
         }
-        
-        // Release Stage: Deploy to production
+
+        // Release Stage: Promote the application to production environment
         stage('Release to Production') {
             steps {
-                echo 'Releasing to Production environment...'
-                // Example: Using SSH to deploy to a production server
+                echo 'Releasing application to Production...'
+                // Example: SSH into the production server and deploy the application
                 sh """
                 ssh user@${PRODUCTION_SERVER} 'docker pull ${DOCKER_IMAGE} && docker stop ${DOCKER_IMAGE}_prod && docker rm ${DOCKER_IMAGE}_prod && docker run -d -p 80:80 --name ${DOCKER_IMAGE}_prod ${DOCKER_IMAGE}'
                 """
             }
         }
 
-        // Monitoring Stage: Monitor the application in production (optional, but recommended for HD grade)
+        // Monitoring and Alerting Stage: Set up monitoring and alerting for production
         stage('Monitoring and Alerts') {
             steps {
-                echo 'Setting up monitoring...'
-                // Example: You can integrate Datadog, New Relic, or any other monitoring tool
-                // This step can be customized to add alert mechanisms like emails, Slack, or PagerDuty
+                echo 'Setting up monitoring for production...'
+                // Example for monitoring integration (Datadog, New Relic, Prometheus, etc.)
+                // You can include commands or API integrations for monitoring here
             }
         }
     }
@@ -82,13 +82,13 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            cleanWs()  // Clean up workspace after every build
+            cleanWs()  // Cleans up the workspace after every build
         }
         success {
             echo 'Pipeline executed successfully!'
         }
         failure {
-            echo 'Pipeline failed! Please check logs for details.'
+            echo 'Pipeline failed! Please check the logs for more details.'
         }
     }
 }
