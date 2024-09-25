@@ -89,9 +89,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            node {
-                cleanWs()  // Ensuring cleanWs() is inside a node block
-            }
+            cleanWs()  // No need for an additional node block, this will use the default agent
         }
         success {
             echo 'Pipeline completed successfully!'
