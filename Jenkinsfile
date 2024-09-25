@@ -82,9 +82,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up workspace...'
-            node {
-                cleanWs()  // Clean up workspace after every build
-            }
+            cleanWs()  // Clean up workspace after every build
         }
         success {
             echo 'Pipeline executed successfully!'
